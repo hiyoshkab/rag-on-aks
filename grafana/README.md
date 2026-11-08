@@ -7,7 +7,8 @@ Dashboard Definition: [`rag-dashboard.json`](./rag-dashboard.json)
 ![`dashboard.png`](./dashboard.png)
 
 The dashboard uses Azure Managed Prometheus through an Azure Managed Grafana
-workspace. It provides an operational view of the RAG App and Pods.
+workspace. It provides an operational view of the RAG application and its
+Kubernetes pods.
 
 ## Dashboard panels
 The dashboard currently includes:
@@ -27,7 +28,7 @@ collected by Azure Managed Prometheus.
 ## Import into Grafana
 1. Open the target Azure Managed Grafana workspace.
 2. Select **Dashboards** and choose **Import**.
-3. Upload `ras-backend-dashboard.json`.
+3. Upload [`rag-dashboard.json`](./rag-dashboard.json).
 4. Select the Azure Managed Prometheus data source when prompted.
 5. Save the imported dashboard.
 
@@ -49,16 +50,16 @@ histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{
 
 CPU usage is calculated from the cumulative CPU-seconds counter:
 ```promql
-100 * sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="raas" container!="",container!="POD"}[5m]))
+100 * sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="raas", container!="", container!="POD"}[5m]))
 ```
 
 Memory percentage compares the current working set with the configured pod
 memory limit:
 
 ```promql
-100 * sum by (namespace, pod) (container_memory_working_set_bytes{namespace="raas", container!="",container!="POD"})
+100 * sum by (namespace, pod) (container_memory_working_set_bytes{namespace="raas", container!="", container!="POD"})
 /
-sum by (namespace, pod) (kube_pod_container_resource_limits{namespace="raas", resource="memory",unit="byte"})
+sum by (namespace, pod) (kube_pod_container_resource_limits{namespace="raas", resource="memory", unit="byte"})
 ```
 
 ## Production considerations

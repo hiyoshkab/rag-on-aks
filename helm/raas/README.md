@@ -1,18 +1,19 @@
 # RAAS Helm chart
 
 This chart installs the RaaS frontend, backend, and Qdrant StatefulSet into the
-`raas` namespace. The app pipeline runs frontend and backend tests, builds and pushes
-both images tagged with the commit SHA, then calls the reusable Helm workflow
-to deploy them together. Changes under `helm/` trigger the same reusable
-workflow directly, reusing the frontend and backend image references stored in
-the currently installed Helm release.
+`raas` namespace. The app pipeline runs the relevant frontend and backend tests,
+builds and pushes commit-tagged images for changed components, then calls the
+reusable Helm workflow to deploy them. The reusable workflow can also be started
+by the application workflow; when image tags are omitted, it reuses the image
+tags stored in the currently installed Helm release. The application workflow's
+manual dispatch can force builds or deployment.
 
 ## Deploy from GitHub Actions
 
 The workflow expects these GitHub repository variables:
 
-- `DOCKERHUB_REPO`: Docker Hub namespace or repository prefix used by the build
-  workflow, for example `docker.io/YOUR_DOCKERHUB_USERNAME`.
+- `DOCKERHUB_REPO`: fully qualified Docker image repository prefix used by the
+  build workflow, for example `docker.io/YOUR_DOCKERHUB_USERNAME`.
 - `AKS_CLUSTER_NAME`: the AKS cluster name.
 - `AKS_RESOURCE_GROUP`: the Azure resource group containing the cluster.
 - `AZURE_OPENAI_ENDPOINT`: endpoint provided to the app's ConfigMap at deploy

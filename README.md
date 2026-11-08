@@ -1,7 +1,9 @@
 # RAG on AKS
 This is a retrieval-augmented question-answering application (RAG) for plain-text documents built on AKS. Upload a UTF-8 `.txt` or `.md` file, store its embeddings in Qdrant, and ask questions answered with Azure AI Foundry. The React frontend displays the generated answer and the source passages used to produce it.
 
-It keeps everything contained within a VNET to prevent external access and maintain privacy of the internal content.
+The application runs in an AKS virtual network, and the Azure AI Foundry
+account is configured with private network access. The AKS API server and
+application exposure should still be reviewed separately for each environment.
 
 ## Architecture
 ![RAG architecture](./architecture.png)
@@ -40,7 +42,11 @@ Infrastructure is managed with Terraform and application resources with Helm. Re
 
 The deployment uses an AKS cluster, a Qdrant StatefulSet with persistent storage, and Azure Workload Identity for the backend's user-assigned identity. The application namespace is `raas`.
 
-On pushes to `main`, the deployment workflow runs backend and frontend tests, builds commit-tagged images, pushes them to Docker Hub, and deploys the Helm release. Terraform changes use the separate plan/apply workflow.
+On pushes to `main` that change `backend/**` or `frontend/**`, the deployment
+workflow runs the corresponding tests, builds commit-tagged images, pushes them
+to Docker Hub, and deploys the Helm release. Manual workflow dispatch supports
+forcing frontend/backend builds or deployment. Terraform changes use the
+separate plan/apply workflow.
 
 > Note: For production, Azure Container Registry with Private Endpoint should be used instead of Docker Hub. Docker Hub is used here for simpler design in this demo. 
 
@@ -145,8 +151,8 @@ The backend reads these environment variables:
 | `EMBED_DIM` | `384` | Expected embedding dimension |
 | `EMBED_BATCH_SIZE` | `64` | Embedding batch size |
 | `MAX_UPLOAD_BYTES` | `5242880` | Maximum upload size |
-| `CHUNK_SIZE` | `512` | Chunk size used during ingestion |
-| `OVERLAP` | `64` | Chunk overlap |
+| `CHUNK_SIZE` | `256` | Chunk size used during ingestion |
+| `OVERLAP` | `32` | Chunk overlap |
 
 ## API
 ### `POST /ingest`

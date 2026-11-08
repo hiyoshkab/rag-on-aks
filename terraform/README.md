@@ -16,13 +16,14 @@ This configuration creates the Azure infrastructure required by RaaS:
 - An Azure subscription with permission to create resource groups, AKS,
   networking, Azure AI Foundry, private endpoints, managed identities, and
   role assignments
-- An existing resource group for the Foundry account and private endpoint
+- Permission to create the Foundry resource group, account, model deployment,
+  private endpoint, and private DNS resources
 - A Microsoft Entra group object ID for AKS administrators
 - The Microsoft Entra service principal object ID used by GitHub Actions
 
-The Foundry resource group is not created by this configuration. Set
-`foundry_resource_group_name` to an existing resource group. The separate
-resource group created by Terraform contains the AKS and application resources.
+Terraform creates the resource group named by `foundry_resource_group_name` for
+the Foundry account and private networking. A separate generated resource
+group contains the AKS and application resources.
 
 ## Remote Terraform state
 
@@ -91,8 +92,9 @@ Apply only after reviewing the plan:
 terraform apply
 ```
 
-Terraform creates the Foundry account and model deployment; no
-`terraform import` step is required for a new environment.
+Terraform creates the Foundry account, model deployment, private endpoint, and
+private DNS resources. No `terraform import` step is required for a new
+environment.
 
 If using the GitHub Actions workflow, configure the remote Azure Storage
 backend variables and `AZURE_CREDENTIALS` secret, then run the workflow with
