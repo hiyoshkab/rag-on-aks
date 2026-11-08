@@ -45,7 +45,7 @@ jobs:
           kubelogin-version: v0.0.24
 
       - name: Set AKS context
-        uses: azure/aks-set-context@v4
+        uses: azure/aks-set-context@v5
         with:
           cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
           resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
@@ -140,7 +140,7 @@ jobs:
           kubelogin-version: v0.0.24
 
       - name: Set AKS context
-        uses: azure/aks-set-context@v4
+        uses: azure/aks-set-context@v5
         with:
           cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
           resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
