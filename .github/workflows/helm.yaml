@@ -7,8 +7,12 @@ on:
         description: Shared image repository prefix for frontend and backend; omit with image_tag to reuse installed release values.
         required: false
         type: string
-      image_tag:
-        description: Shared frontend and backend image tag; omit with image_repository to reuse installed release values.
+      frontend_image_tag:
+        description: Frontend image tag; omit with image_repository to reuse installed release values.
+        required: false
+        type: string
+      backend_image_tag:
+        description: Backend image tag; omit with image_repository to reuse installed release values.
         required: false
         type: string
     secrets:
@@ -54,24 +58,50 @@ jobs:
         id: images
         env:
           IMAGE_REPOSITORY: ${{ inputs.image_repository }}
-          IMAGE_TAG: ${{ inputs.image_tag }}
+          FE_IMAGE_TAG: ${{ inputs.frontend_image_tag }}
+          BE_IMAGE_TAG: ${{ inputs.backend_image_tag }}
         shell: bash
         run: |
-          if [[ -n "$IMAGE_REPOSITORY" && -n "$IMAGE_TAG" ]]; then
-            echo "frontend_repository=${IMAGE_REPOSITORY}/raas-frontend" >> "$GITHUB_OUTPUT"
-            echo "frontend_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
-            echo "backend_repository=${IMAGE_REPOSITORY}/raas-backend" >> "$GITHUB_OUTPUT"
-            echo "backend_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
-          elif [[ -z "$IMAGE_REPOSITORY" && -z "$IMAGE_TAG" ]]; then
-            values="$(helm get values raas --namespace raas --all --output json)"
-            echo "frontend_repository=$(jq -er '.frontendImage.repository | select(type == "string" and length > 0)' <<< "$values")" >> "$GITHUB_OUTPUT"
-            echo "frontend_tag=$(jq -er '.frontendImage.tag | select(type == "string" and length > 0)' <<< "$values")" >> "$GITHUB_OUTPUT"
-            echo "backend_repository=$(jq -er '.backendImage.repository | select(type == "string" and length > 0)' <<< "$values")" >> "$GITHUB_OUTPUT"
-            echo "backend_tag=$(jq -er '.backendImage.tag | select(type == "string" and length > 0)' <<< "$values")" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::image_repository and image_tag must either both be provided or both be omitted."
+          if [[ -z "$IMAGE_REPOSITORY" ]]; then
+            echo "::error::Image repository is not provided. Please provide an image repository."
             exit 1
           fi
+
+          values="$(helm get values raas --namespace raas --all --output json)"
+          frontend_repository=${IMAGE_REPOSITORY}/raas-frontend"
+          backend_repository=${IMAGE_REPOSITORY}/raas-backend"
+          frontend_tag=""
+          backend_tag=""
+
+          if [[ -n "$FE_IMAGE_TAG" ]]; then
+            frontend_tag=${FE_IMAGE_TAG}"
+          else
+            frontend_tag=$(jq -er '.frontendImage.tag | select(type == "string" and length > 0)' <<< "$values")"
+          fi
+
+          if [[ -n "$BE_IMAGE_TAG" ]]; then
+            backend_tag=${BE_IMAGE_TAG}"
+          else
+            backend_tag=$(jq -er '.backendImage.tag | select(type == "string" and length > 0)' <<< "$values")"
+          fi
+
+          echo "Checking ${frontend_repository}:${frontend_tag} and ${backend_repository}:${backend_tag} exists...."
+
+          if ! docker buildx imagetools inspect "${frontend_repository}:${frontend_tag}" > /dev/null; then
+            echo "::error::Frontend image ${frontend_repository}:${frontend_tag} does not exist."
+            exit 1
+          fi
+          if ! docker buildx imagetools inspect "${backend_repository}:${backend_tag}" > /dev/null; then
+            echo "::error::Backend image ${backend_repository}:${backend_tag} does not exist."
+            exit 1
+          fi
+          
+          echo "Checks passed for ${frontend_repository}:${frontend_tag} and ${backend_repository}:${backend_tag}"
+
+          echo "frontend_repository=${frontend_repository}" >> "$GITHUB_OUTPUT"
+          echo "frontend_tag=${frontend_tag}" >> "$GITHUB_OUTPUT"
+          echo "backend_repository=${backend_repository}" >> "$GITHUB_OUTPUT"
+          echo "backend_tag=${backend_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Helm Deploy
         env:

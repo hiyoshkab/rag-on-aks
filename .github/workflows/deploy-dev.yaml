@@ -13,7 +13,27 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed components
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            frontend:
+              - "frontend/**"
+            backend:
+              - "backend/**"
+
   frontend-test:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +50,8 @@ jobs:
         working-directory: frontend/app_frontend
     
   frontend-build:
-    needs: frontend-test
+    needs: [changes, frontend-test]
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     env:
       IMAGE: ${{ vars.DOCKERHUB_REPO }}/raas-frontend:sha-${{ github.sha }}
@@ -66,8 +87,9 @@ jobs:
       - name: Push
         run: docker push "$IMAGE"
 
-
   backend-test:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -86,7 +108,8 @@ jobs:
         working-directory: backend
 
   backend-build:
-    needs: backend-test
+    needs: [changes, backend-test]
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     env:
       IMAGE: ${{ vars.DOCKERHUB_REPO }}/raas-backend:sha-${{ github.sha }}
@@ -125,10 +148,16 @@ jobs:
         run: docker push "$IMAGE"
 
   deploy:
-    needs: [frontend-build, backend-build]
+    needs: [changes, frontend-build, backend-build]
+    if: |
+      always() &&
+      (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true') &&
+      (needs.changes.outputs.frontend != 'true' || needs.frontend-build.result == 'success') &&
+      (needs.changes.outputs.backend != 'true' || needs.backend-build.result == 'success')
     uses: ./.github/workflows/helm.yaml
     with:
       image_repository: ${{ vars.DOCKERHUB_REPO }}
-      image_tag: sha-${{ github.sha }}
+      frontend_image_tag: ${{ needs.changes.outputs.frontend == 'true' && format('sha-{0}', github.sha) || '' }}
+      backend_image_tag: ${{ needs.changes.outputs.backend == 'true' && format('sha-{0}', github.sha) || '' }}
     secrets:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
