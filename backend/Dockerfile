@@ -9,6 +9,10 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt 
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --only-upgrade zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
 # Remove files to prevent false positives in security scans
 RUN find / -type f \( -name '*.cdx.json' -o -name '*.bom.json' -o -name 'bom.json' -o -name '*.spdx.json' -o -name '*.spdx' \) -delete 2>/dev/null || true
  
