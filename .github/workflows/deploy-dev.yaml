@@ -8,6 +8,19 @@ on:
       - "frontend/**"
       - ".github/workflows/deploy-dev.yaml"
   workflow_dispatch:
+    inputs:
+      fe-force:
+        description: Force frontend build.
+        required: false
+        type: boolean
+      be-force:
+        description: Force backend build.
+        required: false
+        type: boolean
+      deploy-force:
+        description: Force deployment.
+        required: false
+        type: boolean
 
 permissions:
   contents: read
@@ -33,7 +46,7 @@ jobs:
 
   frontend-test:
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: (needs.changes.outputs.frontend == 'true' || inputs.fe-force == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +64,6 @@ jobs:
     
   frontend-build:
     needs: [changes, frontend-test]
-    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     env:
       IMAGE: ${{ vars.DOCKERHUB_REPO }}/raas-frontend:sha-${{ github.sha }}
@@ -89,7 +101,7 @@ jobs:
 
   backend-test:
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: (needs.changes.outputs.backend == 'true' || inputs.be-force == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -109,7 +121,6 @@ jobs:
 
   backend-build:
     needs: [changes, backend-test]
-    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     env:
       IMAGE: ${{ vars.DOCKERHUB_REPO }}/raas-backend:sha-${{ github.sha }}
@@ -150,10 +161,11 @@ jobs:
   deploy:
     needs: [changes, frontend-build, backend-build]
     if: |
-      always() &&
-      (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true') &&
-      (needs.changes.outputs.frontend != 'true' || needs.frontend-build.result == 'success') &&
-      (needs.changes.outputs.backend != 'true' || needs.backend-build.result == 'success')
+      always() && (
+        (inputs.deploy-force == 'true' || (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true')) &&
+        (needs.changes.outputs.frontend != 'true' || needs.frontend-build.result == 'success') &&
+        (needs.changes.outputs.backend != 'true' || needs.backend-build.result == 'success')
+      )
     uses: ./.github/workflows/helm.yaml
     with:
       image_repository: ${{ vars.DOCKERHUB_REPO }}
