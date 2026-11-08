@@ -7,8 +7,7 @@ Dashboard Definition: [`rag-dashboard.json`](./rag-dashboard.json)
 ![`dashboard.png`](./dashboard.png)
 
 The dashboard uses Azure Managed Prometheus through an Azure Managed Grafana
-workspace. It provides an operational view of the `raas` namespace and the
-backend API.
+workspace. It provides an operational view of the RAG App and Pods.
 
 ## Dashboard panels
 The dashboard currently includes:
