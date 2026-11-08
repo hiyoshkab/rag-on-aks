@@ -68,21 +68,21 @@ jobs:
           fi
 
           values="$(helm get values raas --namespace raas --all --output json)"
-          frontend_repository=${IMAGE_REPOSITORY}/raas-frontend"
-          backend_repository=${IMAGE_REPOSITORY}/raas-backend"
+          frontend_repository="${IMAGE_REPOSITORY}/raas-frontend"
+          backend_repository="${IMAGE_REPOSITORY}/raas-backend"
           frontend_tag=""
           backend_tag=""
 
           if [[ -n "$FE_IMAGE_TAG" ]]; then
-            frontend_tag=${FE_IMAGE_TAG}"
+            frontend_tag="$FE_IMAGE_TAG"
           else
-            frontend_tag=$(jq -er '.frontendImage.tag | select(type == "string" and length > 0)' <<< "$values")"
+            frontend_tag="$(jq -er '.frontendImage.tag | select(type == "string" and length > 0)' <<< "$values")"
           fi
 
           if [[ -n "$BE_IMAGE_TAG" ]]; then
-            backend_tag=${BE_IMAGE_TAG}"
+            backend_tag="$BE_IMAGE_TAG"
           else
-            backend_tag=$(jq -er '.backendImage.tag | select(type == "string" and length > 0)' <<< "$values")"
+            backend_tag="$(jq -er '.backendImage.tag | select(type == "string" and length > 0)' <<< "$values")"
           fi
 
           echo "Checking ${frontend_repository}:${frontend_tag} and ${backend_repository}:${backend_tag} exists...."
