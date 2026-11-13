@@ -162,7 +162,7 @@ jobs:
             -backend-config="use_azuread_auth=true"
       
       - name: Download plan artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tfplan
           path: terraform
