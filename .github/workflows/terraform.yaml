@@ -35,7 +35,7 @@ jobs:
           terraform_version: 1.16.5
 
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -130,7 +130,7 @@ jobs:
           terraform_version: 1.16.5
         
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
